@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
 use App\Repository\TaskRepository;
+use App\Entity\User;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -29,9 +30,9 @@ class Task
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\ManyToOne(targetEntity: self::class)]
+    #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: false)]
-    private ?self $owner = null;
+    private ?User $owner = null;
 
     public function getId(): ?int
     {
@@ -86,12 +87,12 @@ class Task
         return $this;
     }
 
-    public function getOwner(): ?self
+    public function getOwner(): ?User
     {
         return $this->owner;
     }
 
-    public function setOwner(?self $owner): static
+    public function setOwner(?User $owner): static
     {
         $this->owner = $owner;
 
