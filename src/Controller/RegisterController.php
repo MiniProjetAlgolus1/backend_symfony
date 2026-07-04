@@ -4,41 +4,59 @@ namespace App\Controller;
 
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
-// use Dom\Entity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-// use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
-// use Symfony\Component\Security\Core\Validator\Constraints\UserPassword;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-final class RegisterController extends AbstractController
+class RegisterController extends AbstractController
 {
-    #[Route('/api/register', name: 'app_register', methods:['POST'])]
+    #[Route('/api/register', name: 'api_register', methods: ['POST'])]
     public function register(
-    Request $request,
-    EntityManagerInterface $em,
-    UserPasswordHasherInterface $userPasswordHasher
+        Request $request,
+        EntityManagerInterface $em,
+        UserPasswordHasherInterface $passwordHasher,
+        ValidatorInterface $validator
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
 
         if (empty($data['email']) || empty($data['password'])) {
-            return $this->json(['error' => 'Email et mot de passe requis'], 400); //bad reaquest
+            return $this->json(['error' => 'Email et mot de passe requis'], 400);
         }
+
         $existing = $em->getRepository(User::class)->findOneBy(['email' => $data['email']]);
-        if ($existing) {
-            return $this->json(['error' => 'Cet email est déjà utilisé'], 409); //I know it's not a good suggestion; you need to return 400 or 404 "for security."
+        if (empty($data['email']) || empty($data['password']) || empty($data['firstName']) || empty($data['lastName'])) {
+            return $this->json(['error' => 'Email, mot de passe, prénom et nom sont requis'], 400);
         }
 
         $user = new User();
         $user->setEmail($data['email']);
-        $user->setPassword($userPasswordHasher->hashPassword($user, $data['password']));
+        $user->setFirstName($data['firstName'] ?? null);
+        $user->setLastName($data['lastName'] ?? null);
+        $user->setPassword($passwordHasher->hashPassword($user, $data['password']));
+
+        $errors = $validator->validate($user);
+        if (count($errors) > 0) {
+            $messages = [];
+            foreach ($errors as $violation) {
+                $messages[] = $violation->getMessage();
+            }
+            return $this->json(['error' => implode(', ', $messages)], 400);
+        }
 
         $em->persist($user);
         $em->flush();
 
-        return $this->json(['message' => 'Utilisateur créé', 'email' => $user->getEmail()], 201);
+        return $this->json([
+            'message' => 'Utilisateur créé',
+            'user' => [
+                'id' => $user->getId(),
+                'email' => $user->getEmail(),
+                'firstName' => $user->getFirstName(),
+                'lastName' => $user->getLastName(),
+            ],
+        ], 201);
     }
-
 }
