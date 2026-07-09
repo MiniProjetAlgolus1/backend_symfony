@@ -16,7 +16,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     operations: [
         new GetCollection(security: "is_granted('ROLE_ADMIN')"),
-        new Get(security: "is_granted('ROLE_ADMIN') and object == user"),
+        new Get(security: "is_granted('ROLE_USER') and object == user"),
     ]
 )]
 class User implements UserInterface, PasswordAuthenticatedUserInterface

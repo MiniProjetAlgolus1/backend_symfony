@@ -2,14 +2,26 @@
 
 namespace App\Entity;
 
-use ApiPlatform\Metadata\ApiResource;
 use App\Repository\TaskRepository;
-use App\Entity\User;
-use Doctrine\DBAL\Types\Types;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\DBAL\Types\Types;
 
 #[ORM\Entity(repositoryClass: TaskRepository::class)]
-#[ApiResource(security: "is_granted('ROLE_USER')")]
+#[ApiResource(
+    operations: [
+        new GetCollection(security: "is_granted('ROLE_USER')"),
+        new Get(security: "is_granted('ROLE_USER')", securityPostDenormalize: "object.getOwner() == user"),
+        new Post(security: "is_granted('ROLE_USER')"),
+        new Put(security: "is_granted('ROLE_USER')", securityPostDenormalize: "object.getOwner() == user"),
+        new Delete(security: "is_granted('ROLE_USER')", securityPostDenormalize: "object.getOwner() == user"),
+    ]
+)]
 
 class Task
 {
@@ -34,6 +46,10 @@ class Task
     #[ORM\JoinColumn(nullable: false)]
     private ?User $owner = null;
 
+    public function __construct()
+    {
+        $this->createdAt = new \DateTimeImmutable();
+    }
     public function getId(): ?int
     {
         return $this->id;
