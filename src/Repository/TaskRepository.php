@@ -16,6 +16,20 @@ class TaskRepository extends ServiceEntityRepository
         parent::__construct($registry, Task::class);
     }
 
+    public function countByStatus(): array
+    {
+        $result = $this->createQueryBuilder('t')
+            ->select('t.status, COUNT(t.id) as total')
+            ->groupBy('t.status')
+            ->getQuery()
+            ->getResult();
+
+        $counts = ['pending' => 0, 'in_progress' => 0, 'done' => 0];
+        foreach ($result as $row) {
+            $counts[$row['status']] = (int) $row['total'];
+        }
+        return $counts;
+    }
     //    /**
     //     * @return Task[] Returns an array of Task objects
     //     */
